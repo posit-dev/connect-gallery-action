@@ -176,6 +176,31 @@ releases:
 
 ## Detailed Usage
 
+### Generate Gallery
+
+Scans extension manifests and GitHub Releases to generate `extensions.json`.
+
+```yaml
+- uses: posit-dev/connect-gallery-action@main
+  with:
+    extensions-dir: extensions
+    gallery-config: gallery.json
+```
+
+#### Inputs
+
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `extensions-dir` | No | `extensions` | Relative path to the extensions directory |
+| `gallery-config` | No | `gallery.json` | Relative path to the gallery config file |
+| `commit` | No | `true` | Whether to commit and push `extensions.json` when updates are generated |
+
+#### Outputs
+
+| Output | Description |
+|--------|-------------|
+| `has-updates` | `true` if `extensions.json` was generated (at least one released extension exists) |
+
 ### Build Extension
 
 Lints, packages, and optionally releases an extension in a single step. This
@@ -284,31 +309,6 @@ artifact to have been uploaded by a previous step in the workflow.
 | Input | Required | Description |
 |-------|----------|-------------|
 | `extension-name` | Yes | The name of the extension |
-
-### Generate Gallery
-
-Scans extension manifests and GitHub Releases to generate `extensions.json`.
-
-```yaml
-- uses: posit-dev/connect-gallery-action@main
-  with:
-    extensions-dir: extensions
-    gallery-config: gallery.json
-```
-
-#### Inputs
-
-| Input | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `extensions-dir` | No | `extensions` | Relative path to the extensions directory |
-| `gallery-config` | No | `gallery.json` | Relative path to the gallery config file |
-| `commit` | No | `true` | Whether to commit and push `extensions.json` when updates are generated |
-
-#### Outputs
-
-| Output | Description |
-|--------|-------------|
-| `has-updates` | `true` if `extensions.json` was generated (at least one released extension exists) |
 
 ## Workflow Examples
 
