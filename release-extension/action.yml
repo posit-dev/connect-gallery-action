@@ -1,0 +1,112 @@
+name: Release Extension
+description: Release an extension as a GitHub Release with metadata for gallery generation
+
+inputs:
+  extension-name:
+    description: The name of the extension
+    required: true
+    type: string
+
+runs:
+  using: "composite"
+
+  steps:
+    - uses: actions/setup-node@v4
+
+    - run: npm install -g semver
+      shell: bash
+
+    - name: Get manifest extension version
+      run: |
+        MANIFEST_VERSION=$(semver -c $(jq -c -r '.extension.version' < ./extensions/${{ inputs.extension-name }}/manifest.json))
+        echo "MANIFEST_VERSION=$MANIFEST_VERSION" >> "$GITHUB_ENV"
+      shell: bash
+
+    # Uses GitHub Releases API to find the latest released version
+    # If an extension hasn't been released yet we default to `0.0.0` so any
+    # version in the manifest will be higher
+    - name: Get latest version from GitHub releases
+      continue-on-error: true
+      run: |
+        LATEST_TAG=$(gh release list --json tagName,publishedAt \
+          --jq '[.[] | select(.tagName | startswith("${{ inputs.extension-name }}@v"))] | sort_by(.publishedAt) | last // empty | .tagName')
+        if [ -n "$LATEST_TAG" ]; then
+          LATEST_VERSION=$(echo "$LATEST_TAG" | sed 's/.*@v//')
+          LATEST_VERSION=$(semver -c "$LATEST_VERSION")
+        else
+          LATEST_VERSION="0.0.0"
+        fi
+        echo "LATEST_VERSION=$LATEST_VERSION" >> "$GITHUB_ENV"
+      shell: bash
+
+    # We only want to release if the manifest.json contains a newer semver
+    # version than the latest version in the releases
+    - name: Check if manifest has newer version
+      id: should_release
+      run: |
+        # Add the extension name to the summary header for clarity
+        echo "# Extension: ${{ inputs.extension-name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        if [ "$MANIFEST_VERSION" = "0.0.0" ]; then
+          MESSAGE="⚠️ Version 0.0.0 is reserved and will never be released."
+          echo "$MESSAGE"
+          echo "$MESSAGE" >> $GITHUB_STEP_SUMMARY
+          echo "should_release=false" >> "$GITHUB_OUTPUT"
+        else
+          # Normal version comparison logic
+          VERSION_INFO="The manifest version is '$MANIFEST_VERSION' and the released version is '$LATEST_VERSION'"
+          echo "$VERSION_INFO"
+          echo "$VERSION_INFO" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          HIGHER_VERSION=$(semver "$MANIFEST_VERSION" "$LATEST_VERSION" | tail -n 1)
+          if [ "$MANIFEST_VERSION" = "$HIGHER_VERSION" ] && [ "$MANIFEST_VERSION" != "$LATEST_VERSION" ]; then
+            MESSAGE="🚀 Will release! The manifest version is greater than the released version."
+            echo "$MESSAGE"
+            echo "$MESSAGE" >> $GITHUB_STEP_SUMMARY
+            echo "should_release=true" >> "$GITHUB_OUTPUT"
+          else
+            MESSAGE="😴 Holding back from release: The manifest version is not greater than the released version."
+            echo "$MESSAGE"
+            echo "$MESSAGE" >> $GITHUB_STEP_SUMMARY
+            echo "should_release=false" >> "$GITHUB_OUTPUT"
+          fi
+        fi
+      shell: bash
+
+    # Download the packaged extension artifact to release
+    - uses: actions/download-artifact@v4
+      if: steps.should_release.outputs.should_release == 'true'
+      with:
+        name: ${{ inputs.extension-name }}.tar.gz
+
+    # Build release metadata JSON from the manifest for gallery generation
+    - name: Build release metadata
+      if: steps.should_release.outputs.should_release == 'true'
+      run: |
+        METADATA=$(jq -c '{
+          minimumConnectVersion: .extension.minimumConnectVersion,
+          requiredFeatures: (.extension.requiredFeatures // []),
+          requiredEnvironment: (.environment // {})
+        }' ./extensions/${{ inputs.extension-name }}/manifest.json)
+        echo "RELEASE_METADATA=$METADATA" >> "$GITHUB_ENV"
+      shell: bash
+
+    # The release tag utilizes both the extension name and semver version
+    # to create a unique tag for the repository
+    - name: Release tag
+      if: steps.should_release.outputs.should_release == 'true'
+      run: |
+        RELEASE_TAG="${{ inputs.extension-name }}@v$MANIFEST_VERSION"
+        echo "RELEASE_TAG=$RELEASE_TAG" >> "$GITHUB_ENV"
+      shell: bash
+
+    - name: Release
+      if: steps.should_release.outputs.should_release == 'true'
+      run: |
+        gh release create $RELEASE_TAG \
+          --title "${{ inputs.extension-name }} v$MANIFEST_VERSION" \
+          --notes "$RELEASE_METADATA" \
+          ${{ inputs.extension-name }}.tar.gz
+      shell: bash

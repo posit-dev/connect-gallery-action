@@ -1,0 +1,18 @@
+{
+  "name": "connect-gallery-action-scripts",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "generate-gallery": "tsc && node ./dist/generate-gallery.js",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "semver": "^7.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.9",
+    "@types/semver": "^7.5.8",
+    "typescript": "^5.8.2",
+    "vitest": "^4.0.18"
+  }
+}

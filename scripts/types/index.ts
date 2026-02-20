@@ -1,0 +1,72 @@
+export interface Category {
+  id: string;
+  title: string;
+  description: string;
+}
+
+export interface GalleryConfig {
+  categories: Category[];
+}
+
+export interface LanguageRequirement {
+  requires: string;
+}
+
+export interface ExtensionEnvironment {
+  python?: LanguageRequirement;
+  r?: LanguageRequirement;
+  quarto?: LanguageRequirement;
+}
+
+export interface ExtensionManifest {
+  extension: {
+    name: string;
+    title: string;
+    description: string;
+    homepage: string;
+    version: string;
+    minimumConnectVersion: string;
+    requiredFeatures?: string[];
+    category?: Category["id"];
+    tags?: string[];
+  };
+  environment?: ExtensionEnvironment;
+}
+
+export interface ExtensionVersion {
+  version: string;
+  released: string;
+  url: string;
+  minimumConnectVersion: string;
+  requiredFeatures?: string[];
+  requiredEnvironment?: ExtensionEnvironment;
+}
+
+export interface Extension {
+  name: string;
+  title: string;
+  description: string;
+  homepage: string;
+  latestVersion: ExtensionVersion;
+  versions: ExtensionVersion[];
+  tags: string[];
+  category?: Category["id"];
+}
+
+export interface GitHubReleaseAsset {
+  name: string;
+  url: string;
+}
+
+export interface GitHubRelease {
+  tagName: string;
+  publishedAt: string;
+  assets: GitHubReleaseAsset[];
+  body: string;
+}
+
+export interface ReleaseMetadata {
+  minimumConnectVersion: string;
+  requiredFeatures: string[];
+  requiredEnvironment: ExtensionEnvironment;
+}

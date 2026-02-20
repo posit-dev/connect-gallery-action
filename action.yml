@@ -1,0 +1,63 @@
+name: "Generate Connect Extension Gallery"
+description: "Generates extensions.json by scanning extension manifests and querying GitHub Releases"
+
+inputs:
+  extensions-dir:
+    description: "Relative path from workspace root to extensions directory"
+    required: false
+    default: "extensions"
+  gallery-config:
+    description: "Relative path from workspace root to the gallery config file (category definitions)"
+    required: false
+    default: "gallery.json"
+  commit:
+    description: "Whether to commit and push extensions.json when updates are generated"
+    required: false
+    default: "true"
+
+outputs:
+  has-updates:
+    description: "Whether extensions.json was generated (at least one released extension exists)"
+    value: ${{ steps.generate.outputs.has-updates }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: "lts/*"
+        cache: "npm"
+        cache-dependency-path: ${{ github.action_path }}/scripts/package-lock.json
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci
+      working-directory: ${{ github.action_path }}/scripts
+
+    - name: Generate gallery
+      id: generate
+      shell: bash
+      env:
+        EXTENSIONS_DIR: ${{ github.workspace }}/${{ inputs.extensions-dir }}
+        GALLERY_CONFIG: ${{ github.workspace }}/${{ inputs.gallery-config }}
+        EXTENSIONS_JSON: ${{ github.workspace }}/extensions.json
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        npm run generate-gallery
+        if [ -f "$EXTENSIONS_JSON" ]; then
+          echo "has-updates=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "has-updates=false" >> "$GITHUB_OUTPUT"
+        fi
+      working-directory: ${{ github.action_path }}/scripts
+
+    - name: Commit and push
+      if: steps.generate.outputs.has-updates == 'true' && inputs.commit == 'true'
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add extensions.json
+        git commit -m "Update extension list"
+        git push

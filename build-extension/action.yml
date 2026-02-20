@@ -1,0 +1,37 @@
+name: Build Extension
+description: Lint, package, and optionally release an extension in a single step
+
+inputs:
+  extension-name:
+    description: The name of the extension
+    required: true
+    type: string
+  artifact-name:
+    description: >
+      The name of an uploaded artifact to use as the source for the tarball.
+      If not provided, the extension directory is tarred directly.
+    required: false
+    type: string
+  release:
+    description: Whether to run the release step
+    required: false
+    default: "true"
+    type: string
+
+runs:
+  using: "composite"
+
+  steps:
+    - uses: posit-dev/connect-gallery-action/lint-extension@main
+      with:
+        extension-name: ${{ inputs.extension-name }}
+
+    - uses: posit-dev/connect-gallery-action/package-extension@main
+      with:
+        extension-name: ${{ inputs.extension-name }}
+        artifact-name: ${{ inputs.artifact-name }}
+
+    - uses: posit-dev/connect-gallery-action/release-extension@main
+      if: inputs.release == 'true'
+      with:
+        extension-name: ${{ inputs.extension-name }}
