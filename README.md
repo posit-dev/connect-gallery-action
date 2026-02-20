@@ -22,6 +22,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   # Lint, package, and release each extension
   extensions:
@@ -326,6 +329,9 @@ on:
   push:
     branches:
       - main
+
+permissions:
+  contents: write
 
 jobs:
   # Detect which extensions changed
