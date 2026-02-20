@@ -17,6 +17,10 @@ inputs:
     required: false
     default: "true"
     type: string
+  extensions-dir:
+    description: "Relative path from workspace root to extensions directory"
+    required: false
+    default: "extensions"
 
 runs:
   using: "composite"
@@ -25,13 +29,16 @@ runs:
     - uses: posit-dev/connect-gallery-action/lint-extension@main
       with:
         extension-name: ${{ inputs.extension-name }}
+        extensions-dir: ${{ inputs.extensions-dir }}
 
     - uses: posit-dev/connect-gallery-action/package-extension@main
       with:
         extension-name: ${{ inputs.extension-name }}
         artifact-name: ${{ inputs.artifact-name }}
+        extensions-dir: ${{ inputs.extensions-dir }}
 
     - uses: posit-dev/connect-gallery-action/release-extension@main
       if: inputs.release == 'true'
       with:
         extension-name: ${{ inputs.extension-name }}
+        extensions-dir: ${{ inputs.extensions-dir }}

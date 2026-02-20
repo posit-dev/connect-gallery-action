@@ -6,6 +6,10 @@ inputs:
     description: The name of the extension
     required: true
     type: string
+  extensions-dir:
+    description: "Relative path from workspace root to extensions directory"
+    required: false
+    default: "extensions"
 
 runs:
   using: "composite"
@@ -18,7 +22,7 @@ runs:
 
     - name: Get manifest extension version
       run: |
-        MANIFEST_VERSION=$(semver -c $(jq -c -r '.extension.version' < ./extensions/${{ inputs.extension-name }}/manifest.json))
+        MANIFEST_VERSION=$(semver -c $(jq -c -r '.extension.version' < ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json))
         echo "MANIFEST_VERSION=$MANIFEST_VERSION" >> "$GITHUB_ENV"
       shell: bash
 
@@ -89,7 +93,7 @@ runs:
           minimumConnectVersion: .extension.minimumConnectVersion,
           requiredFeatures: (.extension.requiredFeatures // []),
           requiredEnvironment: (.environment // {})
-        }' ./extensions/${{ inputs.extension-name }}/manifest.json)
+        }' ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json)
         echo "RELEASE_METADATA=$METADATA" >> "$GITHUB_ENV"
       shell: bash
 

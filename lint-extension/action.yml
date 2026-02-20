@@ -6,6 +6,10 @@ inputs:
     description: The name of the extension
     required: true
     type: string
+  extensions-dir:
+    description: "Relative path from workspace root to extensions directory"
+    required: false
+    default: "extensions"
 
 runs:
   using: "composite"
@@ -13,10 +17,10 @@ runs:
   steps:
     - name: Check extension name matches directory
       run: |
-        MANIFEST_NAME=$(jq -r '.extension.name' < ./extensions/${{ inputs.extension-name }}/manifest.json)
+        MANIFEST_NAME=$(jq -r '.extension.name' < ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json)
         if [ ${{ inputs.extension-name }} != $MANIFEST_NAME ]; then
           echo "Error: Extension name, directory, and manifest.json mismatch"
-          echo "Extension '${{ inputs.extension-name }}' must be in the folder '/extensions/${{ inputs.extension-name }}' and have the name '${{ inputs.extension-name }}' in the manifest.json."
+          echo "Extension '${{ inputs.extension-name }}' must be in the folder '/${{ inputs.extensions-dir }}/${{ inputs.extension-name }}' and have the name '${{ inputs.extension-name }}' in the manifest.json."
           exit 1
         fi
       shell: bash
@@ -33,13 +37,13 @@ runs:
           elif (.extension.minimumConnectVersion | type) != "string" then error("Missing extension.minimumConnectVersion")
           elif (.extension.version | type) != "string" then error("Missing extension.version")
           else . end
-        ' ./extensions/${{ inputs.extension-name }}/manifest.json
+        ' ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json
       shell: bash
 
     # Structural check: requiredFeatures must be an array if present
     - name: Check requiredFeatures structure
       run: |
-        FEATURES_TYPE=$(jq -r '.extension.requiredFeatures | type' ./extensions/${{ inputs.extension-name }}/manifest.json)
+        FEATURES_TYPE=$(jq -r '.extension.requiredFeatures | type' ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json)
         if [ "$FEATURES_TYPE" != "null" ] && [ "$FEATURES_TYPE" != "array" ]; then
           echo "Error: requiredFeatures in manifest.json must be an array"
           exit 1
@@ -49,7 +53,7 @@ runs:
     # Structural check: tags must be an array if present
     - name: Check tags structure
       run: |
-        TAGS_TYPE=$(jq -r '.extension.tags | type' ./extensions/${{ inputs.extension-name }}/manifest.json)
+        TAGS_TYPE=$(jq -r '.extension.tags | type' ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json)
         if [ "$TAGS_TYPE" != "null" ] && [ "$TAGS_TYPE" != "array" ]; then
           echo "Error: tags in manifest.json must be an array"
           exit 1
@@ -65,5 +69,5 @@ runs:
     # process to work
     - name: Check for valid semver
       run: |
-        semver -c $(jq -c -r '.extension.version' < ./extensions/${{ inputs.extension-name }}/manifest.json)
+        semver -c $(jq -c -r '.extension.version' < ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json)
       shell: bash

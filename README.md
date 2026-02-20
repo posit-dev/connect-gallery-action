@@ -244,6 +244,7 @@ and package):
 | `extension-name` | Yes | | The name of the extension (must match its directory name) |
 | `artifact-name` | No | | Name of an uploaded artifact to use as the tarball source. If omitted, the extension directory is tarred directly. |
 | `release` | No | `"true"` | Whether to run the release step |
+| `extensions-dir` | No | `"extensions"` | Relative path from workspace root to extensions directory |
 
 ### Lint Extension
 
@@ -258,9 +259,10 @@ and a valid semver version.
 
 #### Inputs
 
-| Input | Required | Description |
-|-------|----------|-------------|
-| `extension-name` | Yes | The name of the extension (must match its directory name) |
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `extension-name` | Yes | | The name of the extension (must match its directory name) |
+| `extensions-dir` | No | `"extensions"` | Relative path from workspace root to extensions directory |
 
 #### Checks performed
 
@@ -295,10 +297,11 @@ that artifact and create the tarball from it instead of the source directory:
 
 #### Inputs
 
-| Input | Required | Description |
-|-------|----------|-------------|
-| `extension-name` | Yes | The name of the extension (must match its directory name) |
-| `artifact-name` | No | Name of an uploaded artifact to use as the tarball source. If omitted, the extension directory is tarred directly. |
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `extension-name` | Yes | | The name of the extension (must match its directory name) |
+| `artifact-name` | No | | Name of an uploaded artifact to use as the tarball source. If omitted, the extension directory is tarred directly. |
+| `extensions-dir` | No | `"extensions"` | Relative path from workspace root to extensions directory |
 
 ### Release Extension
 
@@ -320,9 +323,10 @@ artifact to have been uploaded by a previous step in the workflow.
 
 #### Inputs
 
-| Input | Required | Description |
-|-------|----------|-------------|
-| `extension-name` | Yes | The name of the extension |
+| Input | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `extension-name` | Yes | | The name of the extension |
+| `extensions-dir` | No | `"extensions"` | Relative path from workspace root to extensions directory |
 
 ## Workflow Examples
 

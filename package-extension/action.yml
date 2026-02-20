@@ -12,6 +12,10 @@ inputs:
       If not provided, the extension directory is tarred directly.
     required: false
     type: string
+  extensions-dir:
+    description: "Relative path from workspace root to extensions directory"
+    required: false
+    default: "extensions"
 
 runs:
   using: "composite"
@@ -21,7 +25,7 @@ runs:
     # we will create a tarball from the extension's directory
     - name: Create tar
       if: ${{ inputs.artifact-name == '' }}
-      run: tar -czf ${{ inputs.extension-name }}.tar.gz ./extensions/${{ inputs.extension-name }}
+      run: tar -czf ${{ inputs.extension-name }}.tar.gz ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}
       shell: bash
 
     # If we are passed an artifact to use as the source for the tarball
