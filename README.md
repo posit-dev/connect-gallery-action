@@ -59,6 +59,17 @@ jobs:
           extensions-dir: extensions
 ```
 
+And then, to use this in a Connect instance, you'll add the following to the config file. 
+For both the `URL` and `Repo`, change those values to point to your GitHub org and repo.
+
+```
+[GalleryFeed "My feed"]
+URL = "https://raw.githubusercontent.com/{org}/{repo}/refs/heads/main/extensions.json"
+Name = "My Extensions"
+Description = "Internal extensions"
+Repo = "https://github.com/{org}/{repo}"
+```
+
 ## Actions
 
 This repository provides five composite actions. `build-extension` is a bundle of  
