@@ -4,19 +4,73 @@ A collection of GitHub Actions for managing a Posit Connect extension gallery.
 These actions handle linting, releasing, and generating a gallery index
 (`extensions.json`) from extension manifests and GitHub Releases.
 
+## Quickstart Examples
+
+### Simple extensions
+
+For extensions that can be packaged directly by creating a tarball of their
+directory, you just need a directory containing all of the extensions (e.g. 
+`./extensions/`), and a `gallery.json` file at the root of your repo that list
+the categories your extensions fit in (see below for the format of that file).
+
+```yaml
+name: Publish Extension Workflow
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  # Lint, package, and release each extension
+  extensions:
+    strategy:
+      fail-fast: false
+      matrix:
+        extension:
+          - my-extension
+          - another-extension
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: posit-dev/connect-gallery-action/build-extension@main
+        with:
+          extension-name: ${{ matrix.extension }}
+
+  # Regenerate extensions.json and commit
+  update-gallery:
+    runs-on: ubuntu-latest
+    needs: [extensions]
+    if: ${{ always() }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: posit-dev/connect-gallery-action@main
+        with:
+          extensions-dir: extensions
+```
+
 ## Actions
 
-This repository provides five composite actions:
+This repository provides five composite actions. `build-extension` is a bundle of  
+`lint-extension`, `package-extension` and `release-extension`. They are exposed 
+separately if you need more complex setups (see the advanced section below)
 
 | Action | Description |
 |--------|-------------|
 | `posit-dev/connect-gallery-action@main` | Generates `extensions.json` from extension manifests and GitHub Releases |
 | `posit-dev/connect-gallery-action/build-extension@main` | Lints, packages, and optionally releases an extension in a single step |
-| `posit-dev/connect-gallery-action/lint-extension@main` | Validates an extension manifest for required fields and structure |
-| `posit-dev/connect-gallery-action/package-extension@main` | Packages an extension into a tarball and uploads it as a workflow artifact |
-| `posit-dev/connect-gallery-action/release-extension@main` | Creates a GitHub Release for a single extension when its version is bumped |
+| ↳ `posit-dev/connect-gallery-action/lint-extension@main` | Validates an extension manifest for required fields and structure |
+| ↳ `posit-dev/connect-gallery-action/package-extension@main` | Packages an extension into a tarball and uploads it as a workflow artifact |
+| ↳ `posit-dev/connect-gallery-action/release-extension@main` | Creates a GitHub Release for a single extension when its version is bumped |
 
-## Setup
+## Structure
 
 To use these actions you need a repository with the following structure:
 
@@ -120,7 +174,7 @@ releases:
   `manifest.json` is greater than the latest released version and the change is
   merged to `main`.
 
-## Usage
+## Detailed Usage
 
 ### Build Extension
 
