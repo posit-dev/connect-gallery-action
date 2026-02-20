@@ -70,3 +70,11 @@ export interface ReleaseMetadata {
   requiredFeatures: string[];
   requiredEnvironment: ExtensionEnvironment;
 }
+
+/** Shape returned by the GitHub REST API for a release. */
+export interface GitHubApiRelease {
+  tag_name: string;
+  published_at: string;
+  assets: Array<{ name: string; browser_download_url: string }>;
+  body: string;
+}

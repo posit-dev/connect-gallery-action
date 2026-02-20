@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import {
   ExtensionManifest,
+  GitHubApiRelease,
   GitHubRelease,
   GalleryConfig,
 } from "./types";
@@ -10,6 +11,7 @@ import {
   buildExtensions,
   collectTagsAndFeatures,
   buildOutput,
+  transformGitHubApiReleases,
 } from "./generate-gallery-lib";
 
 // ---------------------------------------------------------------------------
@@ -256,6 +258,136 @@ describe("collectTagsAndFeatures", () => {
 
     expect(allTags.size).toBe(0);
     expect(allFeatures.size).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildOutput
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// transformGitHubApiReleases
+// ---------------------------------------------------------------------------
+
+describe("transformGitHubApiReleases", () => {
+  it("maps snake_case API fields to camelCase GitHubRelease", () => {
+    const apiReleases: GitHubApiRelease[] = [
+      {
+        tag_name: "my-ext@v1.0.0",
+        published_at: "2024-06-01T00:00:00Z",
+        assets: [
+          { name: "my-ext.tar.gz", browser_download_url: "https://example.com/my-ext.tar.gz" },
+        ],
+        body: "release notes",
+      },
+    ];
+
+    const result = transformGitHubApiReleases(apiReleases);
+
+    expect(result).toEqual([
+      {
+        tagName: "my-ext@v1.0.0",
+        publishedAt: "2024-06-01T00:00:00Z",
+        assets: [{ name: "my-ext.tar.gz", url: "https://example.com/my-ext.tar.gz" }],
+        body: "release notes",
+      },
+    ]);
+  });
+
+  it("maps browser_download_url to url on assets", () => {
+    const apiReleases: GitHubApiRelease[] = [
+      {
+        tag_name: "ext@v2.0.0",
+        published_at: "2025-01-01T00:00:00Z",
+        assets: [
+          { name: "ext.tar.gz", browser_download_url: "https://github.com/download/ext.tar.gz" },
+          { name: "ext.zip", browser_download_url: "https://github.com/download/ext.zip" },
+        ],
+        body: "",
+      },
+    ];
+
+    const result = transformGitHubApiReleases(apiReleases);
+
+    expect(result[0].assets).toEqual([
+      { name: "ext.tar.gz", url: "https://github.com/download/ext.tar.gz" },
+      { name: "ext.zip", url: "https://github.com/download/ext.zip" },
+    ]);
+  });
+
+  it("handles releases with no assets", () => {
+    const apiReleases: GitHubApiRelease[] = [
+      {
+        tag_name: "ext@v1.0.0",
+        published_at: "2024-06-01T00:00:00Z",
+        assets: [],
+        body: "",
+      },
+    ];
+
+    const result = transformGitHubApiReleases(apiReleases);
+
+    expect(result[0].assets).toEqual([]);
+  });
+
+  it("handles empty body", () => {
+    const apiReleases: GitHubApiRelease[] = [
+      {
+        tag_name: "ext@v1.0.0",
+        published_at: "2024-06-01T00:00:00Z",
+        assets: [],
+        body: "",
+      },
+    ];
+
+    const result = transformGitHubApiReleases(apiReleases);
+
+    expect(result[0].body).toBe("");
+  });
+
+  it("transforms multiple releases", () => {
+    const apiReleases: GitHubApiRelease[] = [
+      {
+        tag_name: "ext@v2.0.0",
+        published_at: "2025-01-01T00:00:00Z",
+        assets: [{ name: "ext.tar.gz", browser_download_url: "https://example.com/v2.tar.gz" }],
+        body: "v2",
+      },
+      {
+        tag_name: "ext@v1.0.0",
+        published_at: "2024-06-01T00:00:00Z",
+        assets: [{ name: "ext.tar.gz", browser_download_url: "https://example.com/v1.tar.gz" }],
+        body: "v1",
+      },
+    ];
+
+    const result = transformGitHubApiReleases(apiReleases);
+
+    expect(result).toHaveLength(2);
+    expect(result[0].tagName).toBe("ext@v2.0.0");
+    expect(result[1].tagName).toBe("ext@v1.0.0");
+  });
+
+  it("produces output compatible with parseExtensionRelease", () => {
+    const apiReleases: GitHubApiRelease[] = [
+      {
+        tag_name: "my-ext@v1.0.0",
+        published_at: "2024-06-01T00:00:00Z",
+        assets: [
+          { name: "my-ext.tar.gz", browser_download_url: "https://example.com/my-ext.tar.gz" },
+        ],
+        body: JSON.stringify({ minimumConnectVersion: "2025.01.0" }),
+      },
+    ];
+
+    const releases = transformGitHubApiReleases(apiReleases);
+    const manifest = makeManifest();
+    const version = parseExtensionRelease(releases[0], "my-ext", manifest);
+
+    expect(version).not.toBeNull();
+    expect(version!.version).toBe("1.0.0");
+    expect(version!.url).toBe("https://example.com/my-ext.tar.gz");
+    expect(version!.minimumConnectVersion).toBe("2025.01.0");
   });
 });
 

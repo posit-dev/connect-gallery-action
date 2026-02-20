@@ -7,6 +7,7 @@ import {
   buildExtensions,
   buildOutput,
   collectTagsAndFeatures,
+  transformGitHubApiReleases,
 } from "./generate-gallery-lib";
 
 function requireEnv(name: string): string {
@@ -50,12 +51,12 @@ for (const dir of extensionDirs) {
 
 const { allTags, allFeatures } = collectTagsAndFeatures(manifests);
 
-// 3. Query all GitHub releases
-const releasesJson = execSync(
-  `gh release list --repo ${repo} --json tagName,publishedAt,assets,body --limit 1000`,
-  { encoding: "utf8" }
+// 3. Query all GitHub releases via the REST API (gh release list does not
+//    expose the assets or body fields, so we call the API directly).
+const rawReleases = JSON.parse(
+  execSync(`gh api repos/${repo}/releases --paginate`, { encoding: "utf8" })
 );
-const allReleases: GitHubRelease[] = JSON.parse(releasesJson);
+const allReleases: GitHubRelease[] = transformGitHubApiReleases(rawReleases);
 
 // 4. Build extensions array
 const extensions = buildExtensions(manifests, allReleases);

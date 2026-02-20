@@ -6,6 +6,7 @@ import {
   ExtensionManifest,
   ExtensionVersion,
   GalleryConfig,
+  GitHubApiRelease,
   GitHubRelease,
   ReleaseMetadata,
 } from "./types";
@@ -116,6 +117,25 @@ export function collectTagsAndFeatures(
   }
 
   return { allTags, allFeatures };
+}
+
+/**
+ * Transform raw GitHub REST API release objects into our GitHubRelease type.
+ * `gh release list --json` does not expose the `assets` or `body` fields, so
+ * we query the REST API directly and map the snake_case response here.
+ */
+export function transformGitHubApiReleases(
+  raw: GitHubApiRelease[]
+): GitHubRelease[] {
+  return raw.map((r) => ({
+    tagName: r.tag_name,
+    publishedAt: r.published_at,
+    assets: (r.assets ?? []).map((a) => ({
+      name: a.name,
+      url: a.browser_download_url,
+    })),
+    body: r.body ?? "",
+  }));
 }
 
 /**
