@@ -15,12 +15,21 @@ runs:
   using: "composite"
 
   steps:
+    - name: Check manifest.json exists
+      run: |
+        MANIFEST_PATH="./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json"
+        if [ ! -f "$MANIFEST_PATH" ]; then
+          echo "Error: manifest.json not found at '$MANIFEST_PATH'"
+          exit 1
+        fi
+      shell: bash
+
     - name: Check extension name matches directory
       run: |
         MANIFEST_NAME=$(jq -r '.extension.name' < ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json)
-        if [ ${{ inputs.extension-name }} != $MANIFEST_NAME ]; then
-          echo "Error: Extension name, directory, and manifest.json mismatch"
-          echo "Extension '${{ inputs.extension-name }}' must be in the folder '/${{ inputs.extensions-dir }}/${{ inputs.extension-name }}' and have the name '${{ inputs.extension-name }}' in the manifest.json."
+        if [ "${{ inputs.extension-name }}" != "$MANIFEST_NAME" ]; then
+          echo "Error: Extension name in manifest.json does not match"
+          echo "Expected '${{ inputs.extension-name }}' but found '$MANIFEST_NAME' in manifest.json."
           exit 1
         fi
       shell: bash
