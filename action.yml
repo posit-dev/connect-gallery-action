@@ -43,7 +43,7 @@ runs:
         GH_TOKEN: ${{ github.token }}
       run: |
         npm run generate-gallery
-        if [ -f "$EXTENSIONS_JSON" ]; then
+        if [ -n "$(git -C "$GITHUB_WORKSPACE" status --porcelain extensions.json)" ]; then
           echo "has-updates=true" >> "$GITHUB_OUTPUT"
         else
           echo "has-updates=false" >> "$GITHUB_OUTPUT"
