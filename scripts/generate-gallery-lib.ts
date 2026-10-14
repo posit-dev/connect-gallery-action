@@ -91,6 +91,7 @@ export function buildExtensions(
       ...(manifest.extension.category
         ? { category: manifest.extension.category }
         : {}),
+      ...(manifest.extension.adminOnly ? { adminOnly: true } : {}),
     });
   }
 

@@ -29,6 +29,7 @@ export interface ExtensionManifest {
     requiredFeatures?: string[];
     category?: Category["id"];
     tags?: string[];
+    adminOnly?: boolean;
   };
   environment?: ExtensionEnvironment;
 }
@@ -51,6 +52,7 @@ export interface Extension {
   versions: ExtensionVersion[];
   tags: string[];
   category?: Category["id"];
+  adminOnly?: boolean;
 }
 
 export interface GitHubReleaseAsset {

@@ -69,6 +69,16 @@ runs:
         fi
       shell: bash
 
+    # Structural check: adminOnly must be a boolean if present
+    - name: Check adminOnly structure
+      run: |
+        ADMIN_ONLY_TYPE=$(jq -r '.extension.adminOnly | type' ./${{ inputs.extensions-dir }}/${{ inputs.extension-name }}/manifest.json)
+        if [ "$ADMIN_ONLY_TYPE" != "null" ] && [ "$ADMIN_ONLY_TYPE" != "boolean" ]; then
+          echo "Error: adminOnly in manifest.json must be a boolean"
+          exit 1
+        fi
+      shell: bash
+
     - uses: actions/setup-node@v4
 
     - run: npm install -g semver
