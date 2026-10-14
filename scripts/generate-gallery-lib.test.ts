@@ -232,6 +232,40 @@ describe("buildExtensions", () => {
     const result = buildExtensions(manifests, releases);
     expect(result[0].category).toBeUndefined();
   });
+
+  it("includes adminOnly when true in manifest", () => {
+    const manifests = new Map<string, ExtensionManifest>();
+    manifests.set("admin-ext", makeManifest({ name: "admin-ext", adminOnly: true }));
+
+    const releases: GitHubRelease[] = [
+      makeRelease({
+        tagName: "admin-ext@v1.0.0",
+        assets: [{ name: "admin-ext.tar.gz", url: "https://example.com/admin-ext.tar.gz" }],
+      }),
+    ];
+
+    const result = buildExtensions(manifests, releases);
+    expect(result[0].adminOnly).toBe(true);
+  });
+
+  it("omits adminOnly when absent or false in manifest", () => {
+    const manifests = new Map<string, ExtensionManifest>();
+    manifests.set("absent", makeManifest({ name: "absent" }));
+    manifests.set("not-admin", makeManifest({ name: "not-admin", adminOnly: false }));
+
+    const releases: GitHubRelease[] = ["absent", "not-admin"].map((name) =>
+      makeRelease({
+        tagName: `${name}@v1.0.0`,
+        assets: [{ name: `${name}.tar.gz`, url: `https://example.com/${name}.tar.gz` }],
+      })
+    );
+
+    const result = buildExtensions(manifests, releases);
+    expect(result).toHaveLength(2);
+    for (const ext of result) {
+      expect(ext).not.toHaveProperty("adminOnly");
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
